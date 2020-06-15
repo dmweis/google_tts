@@ -76,6 +76,14 @@ impl VoiceProps {
         }
     }
 
+    pub fn default_english_female_wavenet() -> VoiceProps {
+        VoiceProps {
+            language_code: "en-US".to_owned(),
+            name: Some("en-US-Wavenet-C".to_owned()),
+            ssml_gender: Some(SsmlVoiceGender::Female),
+        }
+    }
+
     pub fn default_english_male() -> VoiceProps {
         VoiceProps {
             language_code: "en-US".to_owned(),
