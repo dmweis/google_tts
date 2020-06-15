@@ -5,3 +5,7 @@
 Very simple library for using Google's TTS REST API
 
 Current only supports using the API key authentication method
+
+## API tokens
+
+You should be able to create API tokens for your google account [here](https://console.developers.google.com/apis/credentials)
