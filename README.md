@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/dmweis/google_tts.svg?branch=master)](https://travis-ci.org/dmweis/google_tts)
 
+![Rust](https://github.com/dmweis/google_tts/workflows/Rust/badge.svg)
+
 Very simple library for using Google's TTS REST API
 
 Current only supports using the API key authentication method
