@@ -225,7 +225,7 @@ mod tests {
     }
 
     #[test]
-    fn test_something() {
+    fn simple_tts_request() {
         let mock_tts_api = mock("POST", "/v1beta1/text:synthesize")
         .match_query(Matcher::UrlEncoded("alt".into(), "json".into()))
         .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
