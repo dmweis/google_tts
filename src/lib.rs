@@ -1,6 +1,5 @@
 use base64::decode;
-use reqwest::blocking;
-use reqwest::Url;
+use reqwest::{ Client, Url };
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 #[cfg(test)]
@@ -170,13 +169,13 @@ impl TtsResponse {
 
 pub struct GoogleTtsClient {
     api_key: String,
-    https_client: blocking::Client,
+    https_client: Client,
     url: String,
 }
 
 impl GoogleTtsClient {
     pub fn new(api_key: String) -> GoogleTtsClient {
-        let client = blocking::Client::new();
+        let client = Client::new();
         
         #[cfg(not(test))]
         let url = "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
@@ -190,7 +189,7 @@ impl GoogleTtsClient {
         }
     }
 
-    pub fn synthesize(
+    pub async fn synthesize(
         &self,
         input: TextInput,
         voice: VoiceProps,
@@ -205,7 +204,14 @@ impl GoogleTtsClient {
             &self.url,
             &[("alt", "json"), ("key", &self.api_key)],
         )?;
-        let res: TtsResponse = self.https_client.post(url).json(&req).send()?.json()?;
+        let res: TtsResponse = self
+            .https_client
+            .post(url)
+            .json(&req)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(res)
     }
 }
@@ -232,8 +238,8 @@ mod tests {
         );
     }
 
-    #[test]
-    fn simple_tts_request() {
+    #[tokio::test]
+    async fn simple_tts_request() {
         let mock_tts_api = mock("POST", "/v1beta1/text:synthesize")
         .match_query(Matcher::UrlEncoded("alt".into(), "json".into()))
         .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
@@ -248,7 +254,7 @@ mod tests {
             TextInput::with_text("hi".to_owned()),
             VoiceProps::default_english_female(),
             AudioConfig::default_with_encoding(AudioEncoding::Mp3)
-        ).unwrap();
+        ).await.unwrap();
         
         mock_tts_api.assert();
         assert_eq!(fake_res.as_base_64(), "testtesttest".to_owned());
