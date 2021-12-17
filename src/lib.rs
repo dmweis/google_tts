@@ -27,7 +27,7 @@ impl TextInput {
     }
 }
 
-#[derive(Serialize, Clone, Copy, Debug)]
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SsmlVoiceGender {
     #[serde(rename = "SSML_VOICE_GENDER_UNSPECIFIED")]
     SsmlVoiceGenderUnspecified,
@@ -165,10 +165,33 @@ impl TtsResponse {
     }
 }
 
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct VoiceDescription {
+    #[serde(alias = "languageCodes")]
+    pub language_codes: Vec<String>,
+    pub name: String,
+    #[serde(alias = "ssmlGender")]
+    pub ssml_gender: SsmlVoiceGender,
+    #[serde(alias = "naturalSampleRateHertz")]
+    pub natural_sample_rate_hertz: i32,
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug)]
+pub struct ListVoicesResponse {
+    pub voices: Vec<VoiceDescription>,
+}
+
+impl ListVoicesResponse {
+    pub fn as_json(&self) -> Result<String, Box<dyn Error>> {
+        Ok(serde_json::to_string_pretty(self)?)
+    }
+}
+
 pub struct GoogleTtsClient {
     api_key: String,
     https_client: reqwest::Client,
-    synthesize_url: String,
+    synthesize_endpoint_url: String,
+    list_voices_endpoint_url: String,
 }
 
 impl GoogleTtsClient {
@@ -180,12 +203,15 @@ impl GoogleTtsClient {
         #[cfg(test)]
         let base_url = mockito::server_url();
 
-        let synthesize_url = format!("{}{}", base_url, "/v1/text:synthesize");
+        // Use url join instead of format
+        let synthesize_endpoint_url = format!("{}{}", base_url, "/v1/text:synthesize");
+        let list_voices_endpoint_url = format!("{}{}", base_url, "/v1/voices");
 
         GoogleTtsClient {
             api_key,
             https_client: client,
-            synthesize_url,
+            synthesize_endpoint_url,
+            list_voices_endpoint_url,
         }
     }
 
@@ -201,7 +227,7 @@ impl GoogleTtsClient {
             audio_config: audio,
         };
         let url = Url::parse_with_params(
-            &self.synthesize_url,
+            &self.synthesize_endpoint_url,
             &[("alt", "json"), ("key", &self.api_key)],
         )?;
         let res: TtsResponse = self
@@ -212,6 +238,25 @@ impl GoogleTtsClient {
             .await?
             .json()
             .await?;
+        Ok(res)
+    }
+
+    pub async fn list_voices(&self) -> Result<ListVoicesResponse, Box<dyn Error>> {
+        let url =
+            Url::parse_with_params(&self.list_voices_endpoint_url, &[("key", &self.api_key)])?;
+        let res: ListVoicesResponse = self.https_client.get(url).send().await?.json().await?;
+        Ok(res)
+    }
+
+    pub async fn list_voices_with_language_code(
+        &self,
+        language_code: String,
+    ) -> Result<ListVoicesResponse, Box<dyn Error>> {
+        let url = Url::parse_with_params(
+            &self.list_voices_endpoint_url,
+            &[("key", &self.api_key), ("languageCode", &language_code)],
+        )?;
+        let res: ListVoicesResponse = self.https_client.get(url).send().await?.json().await?;
         Ok(res)
     }
 }
@@ -261,5 +306,79 @@ mod tests {
 
         mock_tts_api.assert();
         assert_eq!(fake_res.as_base_64(), "testtesttest".to_owned());
+    }
+
+    #[tokio::test]
+    async fn list_voices_request() {
+        let mock_tts_api = mock("GET", "/v1/voices")
+            .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
+            .match_body(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{
+                    "voices": [
+                    {
+                        "language_codes": [
+                            "ro-RO"
+                        ],
+                        "name": "ro-RO-Wavenet-A",
+                        "ssml_gender": "FEMALE",
+                        "natural_sample_rate_hertz": 24000
+                    }
+                    ]
+                }"#,
+            )
+            .create();
+
+        let client = GoogleTtsClient::new("fake-key".to_owned());
+        let fake_res = client.list_voices().await.unwrap();
+
+        mock_tts_api.assert();
+        assert_eq!(fake_res.voices.len(), 1);
+        assert_eq!(fake_res.voices[0].language_codes.len(), 1);
+        assert_eq!(fake_res.voices[0].language_codes[0], "ro-RO");
+        assert_eq!(fake_res.voices[0].name, "ro-RO-Wavenet-A");
+        assert_eq!(fake_res.voices[0].ssml_gender, SsmlVoiceGender::Female);
+        assert_eq!(fake_res.voices[0].natural_sample_rate_hertz, 24000);
+    }
+
+    #[tokio::test]
+    async fn list_voices_request_with_lang_code() {
+        let mock_tts_api = mock("GET", "/v1/voices")
+            .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
+            .match_query(Matcher::UrlEncoded("languageCode".into(), "en-US".into()))
+            .match_body(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(
+                r#"{
+                    "voices": [
+                    {
+                        "language_codes": [
+                            "en-US"
+                        ],
+                        "name": "ro-RO-Wavenet-A",
+                        "ssml_gender": "FEMALE",
+                        "natural_sample_rate_hertz": 24000
+                    }
+                    ]
+                }"#,
+            )
+            .create();
+
+        let client = GoogleTtsClient::new("fake-key".to_owned());
+        let fake_res = client
+            .list_voices_with_language_code("en-US".to_owned())
+            .await
+            .unwrap();
+
+        mock_tts_api.assert();
+        assert_eq!(fake_res.voices.len(), 1);
+        assert_eq!(fake_res.voices[0].language_codes.len(), 1);
+        assert_eq!(fake_res.voices[0].language_codes[0], "en-US");
+        assert_eq!(fake_res.voices[0].name, "ro-RO-Wavenet-A");
+        assert_eq!(fake_res.voices[0].ssml_gender, SsmlVoiceGender::Female);
+        assert_eq!(fake_res.voices[0].natural_sample_rate_hertz, 24000);
     }
 }
