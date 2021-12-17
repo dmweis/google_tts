@@ -176,9 +176,9 @@ impl GoogleTtsClient {
         let client = reqwest::Client::new();
 
         #[cfg(not(test))]
-        let url = String::from("https://texttospeech.googleapis.com/v1beta1/text:synthesize");
+        let url = String::from("https://texttospeech.googleapis.com/v1/text:synthesize");
         #[cfg(test)]
-        let url = format!("{}{}", &mockito::server_url(), "/v1beta1/text:synthesize");
+        let url = format!("{}{}", &mockito::server_url(), "/v1/text:synthesize");
 
         GoogleTtsClient {
             api_key,
@@ -235,7 +235,7 @@ mod tests {
 
     #[tokio::test]
     async fn simple_tts_request() {
-        let mock_tts_api = mock("POST", "/v1beta1/text:synthesize")
+        let mock_tts_api = mock("POST", "/v1/text:synthesize")
             .match_query(Matcher::UrlEncoded("alt".into(), "json".into()))
             .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
             .match_body(Matcher::Any)
