@@ -176,6 +176,21 @@ pub struct VoiceDescription {
     pub natural_sample_rate_hertz: i32,
 }
 
+impl VoiceDescription {
+    pub fn try_convert_to_voice_props(&self) -> Result<VoiceProps, Box<dyn Error>> {
+        Ok(VoiceProps {
+            // Use thiserror for this
+            language_code: self
+                .language_codes
+                .get(0)
+                .ok_or("Failed to convert Voice description to voice properties")?
+                .clone(),
+            name: Some(self.name.clone()),
+            ssml_gender: Some(self.ssml_gender),
+        })
+    }
+}
+
 #[derive(Deserialize, Serialize, Clone, Debug)]
 pub struct ListVoicesResponse {
     pub voices: Vec<VoiceDescription>,
