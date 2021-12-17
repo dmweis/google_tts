@@ -2,15 +2,15 @@
 name = "google_tts"
 version = "0.1.0"
 authors = ["David Michael Weis <dweis7@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-reqwest = { version = "0.10", features = ["json", "blocking"] }
+reqwest = { version = "0.11", features = ["json", "blocking"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-base64 = "0.12"
+base64 = "0.13"
 
 [dev-dependencies]
-mockito = "0.25"
+mockito = "0.30"
