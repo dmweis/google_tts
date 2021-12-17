@@ -3,7 +3,7 @@ use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Debug)]
 pub struct TextInput {
     #[serde(skip_serializing_if = "Option::is_none")]
     text: Option<String>,
@@ -27,7 +27,7 @@ impl TextInput {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Copy, Debug)]
 pub enum SsmlVoiceGender {
     #[serde(rename = "SSML_VOICE_GENDER_UNSPECIFIED")]
     SsmlVoiceGenderUnspecified,
@@ -39,7 +39,7 @@ pub enum SsmlVoiceGender {
     Neutral,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Debug)]
 pub struct VoiceProps {
     #[serde(alias = "languageCode")]
     language_code: String,
@@ -90,7 +90,7 @@ impl VoiceProps {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Copy, Debug)]
 pub enum AudioEncoding {
     #[serde(rename = "AUDIO_ENCODING_UNSPECIFIED")]
     AudioEncodingUnspecified,
@@ -102,7 +102,7 @@ pub enum AudioEncoding {
     OggOpus,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Debug)]
 pub struct AudioConfig {
     #[serde(alias = "audioEncoding")]
     audio_encoding: AudioEncoding,
@@ -140,7 +140,7 @@ impl AudioConfig {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone, Debug)]
 struct TtsRequest {
     input: TextInput,
     voice: VoiceProps,
@@ -148,7 +148,7 @@ struct TtsRequest {
     audio_config: AudioConfig,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Clone, Debug)]
 pub struct TtsResponse {
     #[serde(alias = "audioContent")]
     audio_content: String,
