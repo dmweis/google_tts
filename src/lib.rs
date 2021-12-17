@@ -1,6 +1,4 @@
 use base64::decode;
-#[cfg(test)]
-use mockito;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
@@ -178,14 +176,14 @@ impl GoogleTtsClient {
         let client = reqwest::Client::new();
 
         #[cfg(not(test))]
-        let url = "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
+        let url = String::from("https://texttospeech.googleapis.com/v1beta1/text:synthesize");
         #[cfg(test)]
         let url = format!("{}{}", &mockito::server_url(), "/v1beta1/text:synthesize");
 
         GoogleTtsClient {
             api_key,
             https_client: client,
-            url: url.to_owned(),
+            url,
         }
     }
 
