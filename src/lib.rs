@@ -168,7 +168,7 @@ impl TtsResponse {
 pub struct GoogleTtsClient {
     api_key: String,
     https_client: reqwest::Client,
-    url: String,
+    synthesize_url: String,
 }
 
 impl GoogleTtsClient {
@@ -176,14 +176,16 @@ impl GoogleTtsClient {
         let client = reqwest::Client::new();
 
         #[cfg(not(test))]
-        let url = String::from("https://texttospeech.googleapis.com/v1/text:synthesize");
+        let base_url = String::from("https://texttospeech.googleapis.com");
         #[cfg(test)]
-        let url = format!("{}{}", &mockito::server_url(), "/v1/text:synthesize");
+        let base_url = mockito::server_url();
+
+        let synthesize_url = format!("{}{}", base_url, "/v1/text:synthesize");
 
         GoogleTtsClient {
             api_key,
             https_client: client,
-            url,
+            synthesize_url,
         }
     }
 
@@ -198,7 +200,10 @@ impl GoogleTtsClient {
             voice,
             audio_config: audio,
         };
-        let url = Url::parse_with_params(&self.url, &[("alt", "json"), ("key", &self.api_key)])?;
+        let url = Url::parse_with_params(
+            &self.synthesize_url,
+            &[("alt", "json"), ("key", &self.api_key)],
+        )?;
         let res: TtsResponse = self
             .https_client
             .post(url)
