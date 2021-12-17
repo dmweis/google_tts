@@ -1,8 +1,8 @@
 # Google Text-to-speech
 
-[![Build Status](https://travis-ci.org/dmweis/google_tts.svg?branch=master)](https://travis-ci.org/dmweis/google_tts)
-
-![Rust](https://github.com/dmweis/google_tts/workflows/Rust/badge.svg)
+[![codecov](https://codecov.io/gh/dmweis/google_tts/branch/main/graph/badge.svg)](https://codecov.io/gh/dmweis/google_tts)
+[![Rust](https://github.com/dmweis/google_tts/workflows/Rust/badge.svg)](https://github.com/dmweis/google_tts/actions)
+[![Private docs](https://github.com/dmweis/google_tts/workflows/Deploy%20Docs%20to%20GitHub%20Pages/badge.svg)](https://davidweis.dev/google_tts/google_tts/index.html)
 
 Very simple library for using Google's TTS REST API
 
