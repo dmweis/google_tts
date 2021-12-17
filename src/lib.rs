@@ -1,10 +1,9 @@
 use base64::decode;
-use reqwest::blocking;
+#[cfg(test)]
+use mockito;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
 use std::error::Error;
-#[cfg(test)]
-use mockito;
 
 #[derive(Serialize)]
 pub struct TextInput {
@@ -170,14 +169,14 @@ impl TtsResponse {
 
 pub struct GoogleTtsClient {
     api_key: String,
-    https_client: blocking::Client,
+    https_client: reqwest::Client,
     url: String,
 }
 
 impl GoogleTtsClient {
     pub fn new(api_key: String) -> GoogleTtsClient {
-        let client = blocking::Client::new();
-        
+        let client = reqwest::Client::new();
+
         #[cfg(not(test))]
         let url = "https://texttospeech.googleapis.com/v1beta1/text:synthesize";
         #[cfg(test)]
@@ -190,22 +189,26 @@ impl GoogleTtsClient {
         }
     }
 
-    pub fn synthesize(
+    pub async fn synthesize(
         &self,
         input: TextInput,
         voice: VoiceProps,
         audio: AudioConfig,
     ) -> Result<TtsResponse, Box<dyn Error>> {
         let req = TtsRequest {
-            input: input,
-            voice: voice,
+            input,
+            voice,
             audio_config: audio,
         };
-        let url = Url::parse_with_params(
-            &self.url,
-            &[("alt", "json"), ("key", &self.api_key)],
-        )?;
-        let res: TtsResponse = self.https_client.post(url).json(&req).send()?.json()?;
+        let url = Url::parse_with_params(&self.url, &[("alt", "json"), ("key", &self.api_key)])?;
+        let res: TtsResponse = self
+            .https_client
+            .post(url)
+            .json(&req)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(res)
     }
 }
@@ -213,7 +216,7 @@ impl GoogleTtsClient {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use mockito::{ mock, Matcher };
+    use mockito::{mock, Matcher};
 
     #[test]
     fn audio_config_serialize_none_fields() {
@@ -232,24 +235,27 @@ mod tests {
         );
     }
 
-    #[test]
-    fn simple_tts_request() {
+    #[tokio::test]
+    async fn simple_tts_request() {
         let mock_tts_api = mock("POST", "/v1beta1/text:synthesize")
-        .match_query(Matcher::UrlEncoded("alt".into(), "json".into()))
-        .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
-        .match_body(Matcher::Any)
-        .with_status(200)
-        .with_header("content-type", "application/json")
-        .with_body(r#"{"audioContent": "testtesttest"}"#)
-        .create();
+            .match_query(Matcher::UrlEncoded("alt".into(), "json".into()))
+            .match_query(Matcher::UrlEncoded("key".into(), "fake-key".into()))
+            .match_body(Matcher::Any)
+            .with_status(200)
+            .with_header("content-type", "application/json")
+            .with_body(r#"{"audioContent": "testtesttest"}"#)
+            .create();
 
         let client = GoogleTtsClient::new("fake-key".to_owned());
-        let fake_res = client.synthesize(
-            TextInput::with_text("hi".to_owned()),
-            VoiceProps::default_english_female(),
-            AudioConfig::default_with_encoding(AudioEncoding::Mp3)
-        ).unwrap();
-        
+        let fake_res = client
+            .synthesize(
+                TextInput::with_text("hi".to_owned()),
+                VoiceProps::default_english_female(),
+                AudioConfig::default_with_encoding(AudioEncoding::Mp3),
+            )
+            .await
+            .unwrap();
+
         mock_tts_api.assert();
         assert_eq!(fake_res.as_base_64(), "testtesttest".to_owned());
     }
