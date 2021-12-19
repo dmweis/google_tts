@@ -128,6 +128,24 @@ pub struct AudioConfig {
 }
 
 impl AudioConfig {
+    pub fn new(
+        audio_encoding: AudioEncoding,
+        speaking_rate: Option<f32>,
+        pitch: Option<i32>,
+        volume_gain_db: Option<f32>,
+        sample_rate_hertz: Option<i32>,
+        effects_profile_id: Option<Vec<String>>,
+    ) -> Self {
+        Self {
+            audio_encoding,
+            speaking_rate,
+            pitch,
+            volume_gain_db,
+            sample_rate_hertz,
+            effects_profile_id,
+        }
+    }
+
     pub fn default_with_encoding(encoding: AudioEncoding) -> AudioConfig {
         AudioConfig {
             audio_encoding: encoding,
