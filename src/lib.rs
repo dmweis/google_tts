@@ -42,14 +42,14 @@ pub enum SsmlVoiceGender {
 #[derive(Serialize, Clone, Debug)]
 pub struct VoiceProps {
     #[serde(alias = "languageCode")]
-    language_code: String,
+    pub language_code: String,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    name: Option<String>,
+    pub name: Option<String>,
 
     #[serde(alias = "ssmlGender")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    ssml_gender: Option<SsmlVoiceGender>,
+    pub ssml_gender: Option<SsmlVoiceGender>,
 }
 
 impl VoiceProps {
