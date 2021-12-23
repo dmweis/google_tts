@@ -1,3 +1,5 @@
+pub mod voices;
+
 use base64::decode;
 use reqwest::Url;
 use serde::{Deserialize, Serialize};
@@ -62,6 +64,14 @@ impl VoiceProps {
             language_code,
             name,
             ssml_gender,
+        }
+    }
+
+    pub fn with_all(language_code: &str, name: &str, ssml_gender: SsmlVoiceGender) -> VoiceProps {
+        VoiceProps {
+            language_code: language_code.to_owned(),
+            name: Some(name.to_owned()),
+            ssml_gender: Some(ssml_gender),
         }
     }
 
